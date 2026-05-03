@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar Water Heater Visual Simulation</title>
+  <style>
+    :root{
+      --bg1:#f7fbff;
+      --bg2:#fff7e8;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --card:#ffffffcc;
+      --accent:#f59e0b;
+      --hot:#ef4444;
+      --warm:#f97316;
+      --cool:#60a5fa;
+      --green:#22c55e;
+      --loss:#94a3b8;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color:var(--text);
+      background:linear-gradient(135deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    .wrap{
+      max-width:1150px;
+      margin:auto;
+      padding:28px;
+    }
+
+    .hero{
+      text-align:center;
+      margin-bottom:22px;
+    }
+
+    h1{
+      margin:0;
+      font-size:42px;
+      letter-spacing:.2px;
+    }
+
+    .subtitle{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:18px;
+    }
+
+    .main{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:22px;
+      align-items:stretch;
+    }
+
+    .panel{
+      background:var(--card);
+      border:1px solid #e5e7eb;
+      border-radius:24px;
+      box-shadow:0 18px 50px #00000014;
+      padding:22px;
+      backdrop-filter: blur(8px);
+    }
+
+    .scene{
+      position:relative;
+      min-height:570px;
+      overflow:hidden;
+    }
+
+    .sun{
+      position:absolute;
+      top:28px;
+      left:42px;
+      width:105px;
+      height:105px;
+      border-radius:50%;
+      background:radial-gradient(circle,#fff7ad 0%,#facc15 45%,#f59e0b 75%);
+      box-shadow:0 0 35px #fbbf24;
+      transition:.5s ease;
+      animation: pulse 2.8s infinite ease-in-out;
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.04)}
+    }
+
+    .ray{
+      position:absolute;
+      height:10px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#facc15,#f97316);
+      transform-origin:left center;
+      opacity:.9;
+      transition:.5s ease;
+    }
+
+    .ray.r1{width:220px; top:135px; left:130px; transform:rotate(22deg)}
+    .ray.r2{width:260px; top:155px; left:120px; transform:rotate(10deg)}
+    .ray.r3{width:230px; top:175px; left:115px; transform:rotate(-3deg)}
+
+    .collector{
+      position:absolute;
+      left:350px;
+      top:235px;
+      width:285px;
+      height:155px;
+      border-radius:20px;
+      background:linear-gradient(145deg,#111827,#374151);
+      border:8px solid #475569;
+      box-shadow:0 22px 35px #00000033;
+      transform:skewX(-8deg);
+      transition:.5s ease;
+    }
+
+    .collector::before{
+      content:"Solar Collector";
+      position:absolute;
+      top:14px;
+      left:32px;
+      color:white;
+      font-weight:bold;
+      letter-spacing:.4px;
+      transform:skewX(8deg);
+    }
+
+    .pipe{
+      position:absolute;
+      height:22px;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--cool),var(--warm));
+      border:3px solid #475569;
+      transition:.5s ease;
+    }
+
+    .pipe.in{
+      left:105px;
+      top:305px;
+      width:245px;
+    }
+
+    .pipe.out{
+      left:610px;
+      top:405px;
+      width:260px;
+      background:linear-gradient(90deg,var(--warm),var(--hot));
+    }
+
+    .label{
+      position:absolute;
+      font-size:15px;
+      font-weight:bold;
+      background:white;
+      padding:7px 11px;
+      border-radius:999px;
+      box-shadow:0 8px 20px #00000014;
+    }
+
+    .label.in{left:135px; top:260px}
+    .label.out{left:630px; top:455px}
+
+    .waterTank{
+      position:absolute;
+      right:22px;
+      top:315px;
+      width:105px;
+      height:175px;
+      border-radius:28px;
+      background:linear-gradient(180deg,#fb923c,#ef4444);
+      box-shadow: inset 0 -20px 30px #0000001a, 0 20px 35px #00000020;
+      border:5px solid #7f1d1d;
+      transition:.5s ease;
+    }
+
+    .waterTank::after{
+      content:"Hot Water";
+      position:absolute;
+      top:66px;
+      left:10px;
+      color:white;
+      font-weight:bold;
+      text-align:center;
+      line-height:1.2;
+    }
+
+    .lossArrow{
+      position:absolute;
+      width:10px;
+      height:80px;
+      border-radius:999px;
+      background:linear-gradient(180deg,#cbd5e1,#64748b);
+      opacity:.65;
+      transition:.5s ease;
+      animation: floatLoss 1.5s infinite ease-in-out;
+    }
+
+    .lossArrow::after{
+      content:"";
+      position:absolute;
+      top:-10px;
+      left:-8px;
+      border-left:13px solid transparent;
+      border-right:13px solid transparent;
+      border-bottom:18px solid #64748b;
+    }
+
+    @keyframes floatLoss{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-8px)}
+    }
+
+    .loss1{left:420px; top:140px}
+    .loss2{left:515px; top:135px}
+    .loss3{left:610px; top:150px}
+
+    .statusBox{
+      position:absolute;
+      bottom:18px;
+      left:28px;
+      right:28px;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .stat{
+      background:#ffffffd9;
+      border:1px solid #e5e7eb;
+      padding:13px;
+      border-radius:18px;
+      text-align:center;
+      box-shadow:0 10px 25px #0000000d;
+    }
+
+    .stat .num{
+      font-size:25px;
+      font-weight:800;
+      margin-top:4px;
+    }
+
+    .controls h2{
+      margin:0 0 8px;
+      font-size:25px;
+    }
+
+    .hint{
+      color:var(--muted);
+      margin-bottom:18px;
+      line-height:1.5;
+    }
+
+    .controlGroup{
+      margin:18px 0;
+      padding:16px;
+      background:#f8fafc;
+      border-radius:20px;
+      border:1px solid #e5e7eb;
+    }
+
+    .controlGroup h3{
+      margin:0 0 12px;
+      font-size:18px;
+    }
+
+    .buttons{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:0;
+      padding:10px 14px;
+      border-radius:999px;
+      background:#e5e7eb;
+      color:#111827;
+      font-weight:bold;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    button:hover{transform:translateY(-2px)}
+    button.active{
+      background:#111827;
+      color:white;
+      box-shadow:0 8px 16px #00000024;
+    }
+
+    .explain{
+      margin-top:18px;
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+      border-radius:18px;
+      padding:16px;
+      line-height:1.55;
+      min-height:95px;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#dcfce7;
+      color:#166534;
+      font-weight:bold;
+      font-size:13px;
+      margin-bottom:8px;
+    }
+
+    .footerNote{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:14px;
+      text-align:center;
+    }
+
+    @media(max-width:900px){
+      .main{grid-template-columns:1fr}
+      h1{font-size:32px}
+      .scene{min-height:560px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>Solar Water Heater Visual Simulation</h1>
+      <div class="subtitle">A simple visual model showing how design factors affect system performance</div>
+    </div>
+
+    <div class="main">
+      <section class="panel scene" id="scene">
+        <div class="sun" id="sun"></div>
+        <div class="ray r1" id="ray1"></div>
+        <div class="ray r2" id="ray2"></div>
+        <div class="ray r3" id="ray3"></div>
+
+        <div class="label in">Cold water in</div>
+        <div class="pipe in"></div>
+
+        <div class="collector" id="collector"></div>
+
+        <div class="pipe out" id="outPipe"></div>
+        <div class="label out" id="outLabel">Hot water out</div>
+        <div class="waterTank" id="tank"></div>
+
+        <div class="lossArrow loss1" id="loss1"></div>
+        <div class="lossArrow loss2" id="loss2"></div>
+        <div class="lossArrow loss3" id="loss3"></div>
+
+        <div class="statusBox">
+          <div class="stat">
+            <div>Performance</div>
+            <div class="num" id="performance">Good</div>
+          </div>
+          <div class="stat">
+            <div>Water Temp.</div>
+            <div class="num" id="temp">50°C</div>
+          </div>
+          <div class="stat">
+            <div>Efficiency</div>
+            <div class="num" id="eff">85%</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel controls">
+        <h2>Change the System Factors</h2>
+        <div class="hint">
+          This is not a calculator. It is a visual explanation of the main idea:
+          more useful solar heat improves performance, while heat losses reduce efficiency.
+        </div>
+
+        <div class="controlGroup">
+          <h3>1. Collector Area</h3>
+          <div class="buttons" data-type="area">
+            <button data-value="small">Small</button>
+            <button class="active" data-value="medium">Medium</button>
+            <button data-value="large">Large</button>
+          </div>
+        </div>
+
+        <div class="controlGroup">
+          <h3>2. Heat Loss</h3>
+          <div class="buttons" data-type="loss">
+            <button data-value="low">Low</button>
+            <button class="active" data-value="medium">Medium</button>
+            <button data-value="high">High</button>
+          </div>
+        </div>
+
+        <div class="controlGroup">
+          <h3>3. Solar Radiation</h3>
+          <div class="buttons" data-type="sun">
+            <button data-value="low">Low</button>
+            <button class="active" data-value="medium">Medium</button>
+            <button data-value="high">High</button>
+          </div>
+        </div>
+
+        <div class="explain" id="explain">
+          <span class="badge">Current explanation</span><br>
+          With medium collector area, medium heat loss, and medium solar radiation,
+          the system can heat water effectively for domestic use.
+        </div>
+      </section>
+    </div>
+
+    <div class="footerNote">
+      Suggested use in presentation: show how increasing area improves temperature, while heat loss lowers efficiency.
+    </div>
+  </div>
+
+<script>
+  const state = {
+    area: "medium",
+    loss: "medium",
+    sun: "medium"
+  };
+
+  const areaScore = {small: 0, medium: 1, large: 2};
+  const sunScore = {low: 0, medium: 1, high: 2};
+  const lossScore = {low: 0, medium: 1, high: 2};
+
+  document.querySelectorAll(".buttons button").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const group = btn.parentElement;
+      const type = group.dataset.type;
+      group.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      state[type] = btn.dataset.value;
+      updateScene();
+    });
+  });
+
+  function updateScene(){
+    const a = areaScore[state.area];
+    const s = sunScore[state.sun];
+    const l = lossScore[state.loss];
+
+    const collector = document.getElementById("collector");
+    const sun = document.getElementById("sun");
+    const rays = [ray1, ray2, ray3];
+    const tank = document.getElementById("tank");
+    const outPipe = document.getElementById("outPipe");
+    const outLabel = document.getElementById("outLabel");
+
+    const areaScale = [0.78, 1.0, 1.22][a];
+    collector.style.transform = `skewX(-8deg) scale(${areaScale})`;
+
+    const sunScale = [0.82, 1.0, 1.18][s];
+    sun.style.transform = `scale(${sunScale})`;
+    sun.style.boxShadow = `0 0 ${[18,35,55][s]}px #fbbf24`;
+    rays.forEach((r,i)=>{
+      r.style.width = ([160,220,300][s] + i*12) + "px";
+      r.style.opacity = [0.45,0.78,1][s];
+    });
+
+    const lossOpacity = [0.25,0.62,1][l];
+    [loss1, loss2, loss3].forEach(x=>{
+      x.style.opacity = lossOpacity;
+      x.style.height = [45,75,105][l] + "px";
+    });
+
+    // visual performance score
+    let score = 48 + a*17 + s*15 - l*13;
+    score = Math.max(25, Math.min(95, score));
+
+    let temp = Math.round(30 + score*0.32);
+    let eff = Math.round(100 - l*12 - (state.sun==="low"?4:0));
+    if(state.loss==="low") eff = 92;
+    if(state.loss==="medium") eff = 85;
+    if(state.loss==="high") eff = 70;
+
+    let perf = "Good";
+    if(score < 50) perf = "Low";
+    if(score >= 75) perf = "High";
+
+    document.getElementById("performance").textContent = perf;
+    document.getElementById("temp").textContent = temp + "°C";
+    document.getElementById("eff").textContent = eff + "%";
+
+    const heatColor = score > 75 ? "#dc2626" : score > 55 ? "#f97316" : "#60a5fa";
+    tank.style.background = `linear-gradient(180deg, ${heatColor}, #ef4444)`;
+    outPipe.style.background = `linear-gradient(90deg,#f97316,${heatColor})`;
+
+    let explanation = "";
+    if(state.area==="large"){
+      explanation += "Increasing the collector area allows the system to absorb more solar energy, so the outlet water temperature increases. ";
+    } else if(state.area==="small"){
+      explanation += "A smaller collector area receives less solar energy, so the water temperature is lower. ";
+    } else {
+      explanation += "A medium collector area gives balanced performance between heat gain and size. ";
+    }
+
+    if(state.loss==="high"){
+      explanation += "High heat losses reduce the useful heat and decrease efficiency. ";
+    } else if(state.loss==="low"){
+      explanation += "Low heat losses keep more energy inside the system, which improves efficiency. ";
+    } else {
+      explanation += "Medium heat losses represent a realistic simplified assumption. ";
+    }
+
+    if(state.sun==="high"){
+      explanation += "Strong solar radiation improves the heating process, which makes the system suitable for sunny regions such as Oman.";
+    } else if(state.sun==="low"){
+      explanation += "Low solar radiation weakens the heating process because less energy enters the collector.";
+    } else {
+      explanation += "Medium solar radiation gives a normal operating condition for the design.";
+    }
+
+    document.getElementById("explain").innerHTML =
+      '<span class="badge">Current explanation</span><br>' + explanation;
+  }
+
+  updateScene();
+</script>
+</body>
+</html>
